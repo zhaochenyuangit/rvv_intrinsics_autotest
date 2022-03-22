@@ -1,0 +1,34 @@
+#include "string.h"
+#include "riscv_vector.h"
+int main(){
+/*** DECLARE ***/
+uint8_t *golden_base = (uint8_t*)8192;
+uint8_t *actual_base = (uint8_t*)8200;
+uint16_t *op1_base = (uint16_t*)8208;
+uint16_t *op2 = (uint16_t*)8224;
+size_t *vl = (size_t*)8232;
+
+/*** CONTEXT ***/
+//context for op1
+vuint16m1_t op1 = vle16_v_u16m1(op1_base,8);
+//nocontext for op2
+//nocontext for vl
+
+/***vector operation***/
+vbool16_t actual= vmadc_vx_u16m1_b16 ( op1, op2, vl );
+/***POST CONTEXT***/
+//context for actual 
+uint8mf2_t vec_actual = vmv_v_x_u8mf2(0,8);
+vec_actual = vmerge_vxm(actual,vec_actual,1,8);
+vse8_v_u8mf2(actual_base,vec_actual,8);
+
+return 0;
+}
+size_t bitwidth = sizeof(op2)*8;
+for(int i=0;i<10;i++){
+    uint16_t op1 = op1_base[i];
+    uint16_t sum = op1_base[i] + op2; 
+    golden_base[i] = (sum^(op1&op2))>>(bitwidth-1);
+}
+
+
